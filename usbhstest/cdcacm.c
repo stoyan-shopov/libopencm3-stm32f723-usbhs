@@ -30,6 +30,9 @@
 
 #include <string.h>
 
+/* Define this to nonzero, to have only one cdcacm interaface (usb serial port) active. */
+#define SINGLE_CDCACM		1
+
 enum
 {
 	/* WARNING: at this time, data IN endpoint sizes *must* equal the corresponding data OUT endpoint sizes. */
@@ -298,7 +301,11 @@ static const struct usb_config_descriptor config = {
 	.bLength = USB_DT_CONFIGURATION_SIZE,
 	.bDescriptorType = USB_DT_CONFIGURATION,
 	.wTotalLength = 0,
+#if SINGLE_CDCACM
+	.bNumInterfaces = 2,
+#else
 	.bNumInterfaces = 4,
+#endif
 	.bConfigurationValue = 1,
 	.iConfiguration = 0,
 	.bmAttributes = 0x80,
@@ -374,10 +381,13 @@ static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
 	usbd_ep_setup(usbd_dev, CDCACM_INTERFACE_0_DATA_IN_ENDPOINT, USB_ENDPOINT_ATTR_BULK, CDCACM_INTERFACE_0_DATA_IN_ENDPOINT_SIZE, NULL);
 	usbd_ep_setup(usbd_dev, CDCACM_INTERFACE_0_NOTIFICATION_IN_ENDPOINT, USB_ENDPOINT_ATTR_INTERRUPT, CDCACM_INTERFACE_0_NOTIFICATION_IN_ENDPOINT_SIZE, NULL);
 
-	usbd_ep_setup(usbd_dev, CDCACM_INTERFACE_1_DATA_OUT_ENDPOINT, USB_ENDPOINT_ATTR_BULK, CDCACM_INTERFACE_1_DATA_OUT_ENDPOINT_SIZE, cdcacm_data_rx_cb);
-	accept_out_packets_on_endpoint(usbd_dev, CDCACM_INTERFACE_1_DATA_OUT_ENDPOINT);
-	usbd_ep_setup(usbd_dev, CDCACM_INTERFACE_1_DATA_IN_ENDPOINT, USB_ENDPOINT_ATTR_BULK, CDCACM_INTERFACE_1_DATA_IN_ENDPOINT_SIZE, NULL);
-	usbd_ep_setup(usbd_dev, CDCACM_INTERFACE_1_NOTIFICATION_IN_ENDPOINT, USB_ENDPOINT_ATTR_INTERRUPT, CDCACM_INTERFACE_1_NOTIFICATION_IN_ENDPOINT_SIZE, NULL);
+	if (!SINGLE_CDCACM)
+	{
+		usbd_ep_setup(usbd_dev, CDCACM_INTERFACE_1_DATA_OUT_ENDPOINT, USB_ENDPOINT_ATTR_BULK, CDCACM_INTERFACE_1_DATA_OUT_ENDPOINT_SIZE, cdcacm_data_rx_cb);
+		accept_out_packets_on_endpoint(usbd_dev, CDCACM_INTERFACE_1_DATA_OUT_ENDPOINT);
+		usbd_ep_setup(usbd_dev, CDCACM_INTERFACE_1_DATA_IN_ENDPOINT, USB_ENDPOINT_ATTR_BULK, CDCACM_INTERFACE_1_DATA_IN_ENDPOINT_SIZE, NULL);
+		usbd_ep_setup(usbd_dev, CDCACM_INTERFACE_1_NOTIFICATION_IN_ENDPOINT, USB_ENDPOINT_ATTR_INTERRUPT, CDCACM_INTERFACE_1_NOTIFICATION_IN_ENDPOINT_SIZE, NULL);
+	}
 
 	usbd_register_control_callback(
 				usbd_dev,
