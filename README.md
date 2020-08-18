@@ -27,4 +27,15 @@ so it will take some time for me to prepare pull requests, so I prefer to place
 the changes I made to libopencm3 into a custom branch.
 
 The test project is just one source file - `usbhstest/cdcacm.c`. The main program
-exposes two cdcacm interfaces, and performs a simple loopback on both interfaces.
+exposes a configurable number of cdcacm interfaces, and performs a simple loopback
+on the selected interfaces.
+
+The number of cdcacm interfaces is controlled by the
+`SINGLE_CDCACM` preprocessor definition, in file `cdcacm.c`
+
+If `SINGLE_CDCACM` is nonzero - two usb cdcacm interfaces are
+exposed.
+
+If `SINGLE_CDCACM` is zero - only one usb cdcacm interface is exposed.
+
+The difference in usb throughput is significant between the two settings.
