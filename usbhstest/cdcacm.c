@@ -369,6 +369,8 @@ int i;
 		return;
 
 	incoming_usb_data[i].len = usbd_ep_read_packet(usbd_dev, ep, incoming_usb_data[i].buf, sizeof incoming_usb_data[i].buf);
+	if (incoming_usb_data[i].len)
+		usbd_ep_nak_set(usbd_dev, ep, 1);
 	avaiable_incoming_endpoints |= 1 << i;
 }
 
@@ -377,14 +379,12 @@ static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
 	(void)wValue;
 
 	usbd_ep_setup(usbd_dev, CDCACM_INTERFACE_0_DATA_OUT_ENDPOINT, USB_ENDPOINT_ATTR_BULK, CDCACM_INTERFACE_0_DATA_OUT_ENDPOINT_SIZE, cdcacm_data_rx_cb);
-	accept_out_packets_on_endpoint(usbd_dev, CDCACM_INTERFACE_0_DATA_OUT_ENDPOINT);
 	usbd_ep_setup(usbd_dev, CDCACM_INTERFACE_0_DATA_IN_ENDPOINT, USB_ENDPOINT_ATTR_BULK, CDCACM_INTERFACE_0_DATA_IN_ENDPOINT_SIZE, NULL);
 	usbd_ep_setup(usbd_dev, CDCACM_INTERFACE_0_NOTIFICATION_IN_ENDPOINT, USB_ENDPOINT_ATTR_INTERRUPT, CDCACM_INTERFACE_0_NOTIFICATION_IN_ENDPOINT_SIZE, NULL);
 
 	if (!SINGLE_CDCACM)
 	{
 		usbd_ep_setup(usbd_dev, CDCACM_INTERFACE_1_DATA_OUT_ENDPOINT, USB_ENDPOINT_ATTR_BULK, CDCACM_INTERFACE_1_DATA_OUT_ENDPOINT_SIZE, cdcacm_data_rx_cb);
-		accept_out_packets_on_endpoint(usbd_dev, CDCACM_INTERFACE_1_DATA_OUT_ENDPOINT);
 		usbd_ep_setup(usbd_dev, CDCACM_INTERFACE_1_DATA_IN_ENDPOINT, USB_ENDPOINT_ATTR_BULK, CDCACM_INTERFACE_1_DATA_IN_ENDPOINT_SIZE, NULL);
 		usbd_ep_setup(usbd_dev, CDCACM_INTERFACE_1_NOTIFICATION_IN_ENDPOINT, USB_ENDPOINT_ATTR_INTERRUPT, CDCACM_INTERFACE_1_NOTIFICATION_IN_ENDPOINT_SIZE, NULL);
 	}
@@ -430,7 +430,7 @@ cm_enable_interrupts();
 					memcpy(buf, incoming_usb_data[i].buf, len);
 cm_disable_interrupts();
 					avaiable_incoming_endpoints ^= 1 << i;
-					accept_out_packets_on_endpoint(usbd_dev, incoming_usb_data[i].out_epnum);
+					usbd_ep_nak_set(usbd_dev, incoming_usb_data[i].out_epnum, 0);
 cm_enable_interrupts();
 					if (len)
 						while (usbd_ep_write_packet(usbd_dev, incoming_usb_data[i].in_epnum, buf, len) == 0xffff)
