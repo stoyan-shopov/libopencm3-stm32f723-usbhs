@@ -3,7 +3,7 @@ BUILD_DIR = bin
 
 ARCH_FLAGS = -mcpu=cortex-m7 -mthumb -mfpu=fpv5-sp-d16 -mfloat-abi=hard
 
-CFILES += cdcacm.c
+CFILES += usb-in-only-test.c
 
 DEVICE=stm32f723iek6
 
